@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>XPath Token Highlighter</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+    <h1> Data Visualizer and Labeller for the Ground Truth in <a href="https://zenodo.org/record/8040341">MarkupMnA Dataset</a></h1>
+    <div class="data-source">
+      <h2> Data Resoures </h2>
+      <p>Use any contract's HTML file (full dataset with HTML links <a href="https://zenodo.org/record/8040341">here</a>) in addition to the corresponding MarkupLM ground truth <a href="https://zenodo.org/record/8040341">CSV files</a></p>
+    </div>
+    <hr class="halving-line">
+    <div class="file-upload">
+      <div class="file-upload-heading">
+        <h2> Instructions </h2>
+        <h3> Visualization Options </h3>
+        <li>Option 1: Uploading a HTML file and its corresponding CSV file.</li>
+        <li>Option 2: Select a contract number.</li>
+        <li>Option 3: Select the contract number of the HTML file and upload its corresponding CSV file.</li>
+        <h3>Labelling Instruction</h3>
+        <ol>
+          <li>Open the tool and select any contract from the selector on the right side. The contract will show up with the visualization. If any of them is wrong, you can just click it to delete it.</li>
+          <li>To make a new tag:
+              <ol>
+                  <li>Select an untagged region using the click and drag.</li>
+                  <li>Press space, a new pop-up will open-up showing the xpath(s) of the selected text. Type in the preferred tag (out of t, tn, n, st, sn, sst, ssn, ssst, sssn, sssst, ssssn).</li>
+                  <li>If you typed incorrectly, press 'x' once. This will clear the buffer and you can re-type the tag that you want.</li>
+                  <li>Press space again to confirm your choice.</li>
+              </ol>
+          </li>
+          <li>After completing all the tags, click the green download button. This downloads the JSON file, which can then be processed using the Python script to be turned into a CSV.</li>
+        </ol>
+        <h3>Convert JSON File to CSV File locally</h3>
+        <ol>
+          <li>Download the <code>json_csv_converter.py</code> file in the `component` folder.</li>
+          <li>Rename the JSON file to <code>contract_NUMBER.json</code> and move it to the folder containing <code>json_csv_converter.py</code>. </li>
+          <li>Run this line of code on your terminal: <code>python json_csv_converter.py contract_NUMBER</code></li>
+          <li>The converted CSV file named <code>contract_NUMBER.csv</code> is now in the same folder as the JSON.</li>
+        </ol>
+
+      </div>
+      <div class="file-upload-options">
+        <div class="file-upload-option1">
+          <h3> Option 1 </h3>
+          <p> Step 1:
+            <label class="file-label">
+              Choose a HTML file to highlight:
+            </label>
+            <input type="file" id="html-file-uploader-opt1"/>
+          </p>
+          <p> Step 2:
+            <label class="file-label">
+              Choose a CSV file containing the ground truth:
+            </label>
+            <input type="file" id="csv-file-uploader-opt1"/>
+          </p>
+        </div>
+        <div class="file-upload-option2">
+          <h3> Option 2</h3>
+          <p class="option2-step1"> 
+            Step 1:<button onclick="refreshPage()" class="refresh-button">Refresh</button>
+          </p>
+          <p> Step 2: 
+            <label class="file-label">
+              Choose the contract you want to display:
+            </label>
+            <input id="select-contract-opt2" type="text" list="contract-options-opt2" placeholder="Please select contract no">
+            <datalist id="contract-options-opt2"></datalist> 
+          </p>
+        </div>
+        <!-- NEW CODE: function to be tested -->
+        <div class="file-upload-option3">
+          <h3> Option 3</h3>
+          <p> Step 1:
+            <label class="file-label">
+              Choose a HTML file to highlight:
+            </label>
+            <input id="html-file-selector-opt3" type="text" list="contract-options-opt3" placeholder="Please select contract no"> 
+            <datalist id="contract-options-opt3"></datalist>
+          </p>
+          <p> Step 2:
+            <label class="file-label">
+              Choose a CSV file containing the ground truth:
+            </label>
+            <input type="file" id="csv-file-uploader-opt3"/>
+          </p>
+        </div>
+      </div>
+    </div>
+    <hr class="halving-line">
+    <!-- <p id = "html-preview"></p> -->
+    <div>
+      <div>
+        <h2>Download the edited JSON file here: <button onclick="downloadJson()" class="download-button">Download Here</button></h2>
+        <h2>Your HTML document will show below</h2>
+        <p id="visualization-status"></p>
+      </div>
+      <div class="document-display">
+        <div class="prediction-category" id="category-div">
+          <table>
+            <tr>
+              <th>Prediction category (segment type)</th>
+              <th>Color</th>
+            </tr>
+            
+            <tr>
+              <td>t (title)</td>
+              <td style="background-color: #FF8C00;">DarkOrange</td>
+            </tr>
+      
+            <tr>
+              <td>tn (title number)</td>
+              <td style="background-color: #E9967A;">DarkSalmon</td>
+            </tr>
+            <tr>
+              <td>n (page number)</td>
+              <td style="background-color: #FFD700;">Gold</td>
+            </tr>
+            <tr>
+              <td>st (section title)</td>
+              <td style="background-color: #F08080;">LightCoral</td>
+            </tr>
+            <tr>
+              <td>sn (section number)</td>
+              <td style="background-color: #CD5C5C;">IndianRed</td>
+            </tr>
+            <tr>
+              <td>sst (sub-section title)</td>
+              <td style="background-color: #DDA0DD;">Plum</td>
+            </tr>
+            <tr>
+              <td>ssn (sub-section number)</td>
+              <td style="background-color: #FA8072;">Salmon</td>
+            </tr>
+            <tr>
+              <td>ssst (sub-sub-section title)</td>
+              <td style="background-color: #5F9EA0;">CadetBlue</td>
+            </tr>
+            <tr>
+              <td>sssn (sub-sub-section number)</td>
+              <td style="background-color: #B0C4DE;">LightSteelBlue</td>
+            </tr>
+            <tr>
+              <td>sssst (sub-sub-sub-section title)</td>
+              <td style="background-color: #98FB98;">PaleGreen</td>
+            </tr>
+            <tr>
+              <td>ssssn (sub-sub-sub-section number)</td>
+              <td style="background-color: #66CDAA;">MediumAquaMarine</td>
+            </tr>
+          </table>
+        </div>
+        <div class="html-display" id="html-div">
+          <p id = "html-preview"></p>
+        </div>
+      </div>
+    </div>
+    <script src="component/contractSelector.js"></script>
+    <script src="component/refreshButton.js"></script>
+    <script src="visualization/extractFeatureValue.js"></script>
+    <script src="visualization/loadFile.js"></script>
+    <script src="visualization/processData.js"></script>
+    <script src="visualization/xpathLabelMap.js"></script>
+    <script src="visualization/colorMap.js"></script>
+    <script src="visualization/colornize.js"></script>
+    <script src="visualization/storageManipulation.js"></script>
+    <!-- <script src="main.js"></script> -->
+    <script src="main_new.js"></script>
+  </body>
+</html>
