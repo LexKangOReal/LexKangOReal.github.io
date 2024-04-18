@@ -559,17 +559,27 @@ function createColorPopup(colorPopups, selectionMap) {
   
 document.addEventListener("DOMContentLoaded", function() {
 	const colorPopups = [];
-	document.addEventListener("mouseup", function(event) {
+	let contract = document.getElementById('html-preview');
+	let isOptionClicked = false;
+	let isClickedInsidePopupContainer = false;
+	let isClickedOutsidePopup = false;
+	let isClickedInsideContainerNOutsidePopup = false;
+
+	// Register event listeners for color options
+	const colorOptions = document.getElementsByClassName('color-option');
+	for (const option of colorOptions) {
+		option.addEventListener('click', function() {
+			isOptionClicked = true;
+		});
+	}
+	contract.addEventListener("mouseup", function(event) {
 
 		let highlightedText = window.getSelection().toString().trim();
-		// console.log(highlightedText);
 		let selectionRange = window.getSelection().getRangeAt(0);
 		let text = selectionRange.startContainer.textContent;
-		// console.log(text);
 		let sel = window.getSelection();
 		let range = sel.getRangeAt(0);
 		let xpaths_text = getElementInfo(sel, range);
-		// console.log(xpaths_text);
 		let highlightedXpaths = xpaths_text.xpaths; // xpath of the highlighted text
 		let highlightedSegmentedText = xpaths_text.selectedTexts; // Array of strings; text contents of the highlighted text
 		console.log('highlightedSegmentedText -->', highlightedSegmentedText);
@@ -587,28 +597,48 @@ document.addEventListener("DOMContentLoaded", function() {
 
 		// If user highlighted text, create color popup for sequence input
 		if (highlightedText !== '') {
-			const range = window.getSelection().getRangeAt(0);
 			const colorPopup = createColorPopup(colorPopups, selectionMap);
+			let rangeY = range.getBoundingClientRect().bottom;
+			let rangeX = range.getBoundingClientRect().left;
+
+			// colorPopup.style.top = document.documentElement.scrollTop + rangeY +'px';
+            // colorPopup.style.left = document.documentElement.scrollLeft + rangeX + 'px';
+			// colorPopup.style.top = window.scrollY + rangeY +'px';
+            // colorPopup.style.left = window.scrollX + rangeX + 'px';
+			colorPopup.style.top = rangeY +'px';
+            colorPopup.style.left = rangeX + 'px';
 			colorPopups.push(colorPopup);
 			// colorPopup inserted at the start of the range (i.e. the first user selected character)
-			range.startContainer.parentNode.appendChild(colorPopup);
+			// range.startContainer.parentNode.appendChild(colorPopup);
+			
+			const popupContainer= document.createElement('div');
+            popupContainer.className = 'popup-container';
+			// range.startContainer.parentNode.appendChild(popupContainer);
+			document.body.appendChild(popupContainer);
+            // contract.children[2].children[0].children[0].children[0].children[0].children[0].appendChild(popupContainer);
+            popupContainer.appendChild(colorPopup);
+
+            popupContainer.addEventListener('click', function(event) {
+                isClickedInsidePopupContainer = true;
+                if (!colorPopup.contains(event.target)) {
+                    isClickedOutsidePopup = true;
+                }
+                isClickedInsideContainerNOutsidePopup = isClickedInsidePopupContainer && isClickedOutsidePopup;
+
+                if (isOptionClicked) {
+                    colorPopup.remove();
+                    colorPopups.pop();
+                    popupContainer.remove();
+                    console.log('COLOR CHOSEN: colorpop and list cleared & popupContainer cleared after color is chosen');
+                } else if (isClickedInsideContainerNOutsidePopup) {
+                    colorPopup.remove();
+                    colorPopups.pop();
+                    popupContainer.remove();
+                    console.log('INSIDE CONTRAINER CLICKED: colorpop and list cleared & popupContainer cleared');
+                }
+            });
 		} 
-		// If the user did not clicked and dragged to highlight text
-		// or did not choose any color options and clicked at somewhere other than the color popup
-		else {
-			if (colorPopups.length > 0) {
-				console.log('entered popup check', colorPopups);
-				// Check if the click happens inside the color popup
-				const isClickInsideAnyColorPopup = colorPopups.some(popup => popup.contains(event.target));
-				if (!isClickInsideAnyColorPopup) {
-					// Remove all color popups
-					console.log("entered popup removal if user clicked elsewhere");
-					colorPopups.forEach(popup => popup.remove());
-					// Reset the list
-					colorPopups.length = 0;
-				}
-			}
-		}
+		
 	});
 });
 function highlightAndUpdateStorage(sequence, selectionMap){
