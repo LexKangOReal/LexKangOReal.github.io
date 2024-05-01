@@ -104,172 +104,6 @@ function findNextOccurrence(xpath, startIndex) {
   return -1; // If not found
 }
 
-// document.addEventListener('keydown', (event) => {
-//     if (event.code === 'Space') {
-//         event.preventDefault();
-//         let highlightedText = window.getSelection().toString();
-//         console.log(highlightedText);
-//         let selectionRange = window.getSelection().getRangeAt(0);
-//         let text = selectionRange.startContainer.textContent;
-//         console.log(text);
-//         let sel = window.getSelection();
-//         let range = sel.getRangeAt(0);
-//         let xpaths_text = getElementInfo(sel, range);
-//         console.log(xpaths_text);
-//         let highlightedXpaths = xpaths_text.xpaths; // xpath of the highlighted text
-//         let highlightedSegmentedText = xpaths_text.selectedTexts; // Array of strings; text contents of the highlighted text
-//         console.log('keydown: highlightedSegmentedText -->', highlightedSegmentedText);
-
-//         // Open dialog box in new window
-//         if (!isMenuOpen) {
-//             isMenuOpen = true;
-//             const menuWindow = window.open("", "Dialog Box", `width=700,height=700`);
-//             const dialog = menuWindow.document.createElement("div");
-//             dialog.style.display = "flex";
-//             dialog.style.flexDirection = "column";
-//             dialog.style.justifyContent = "center";
-//             dialog.style.alignItems = "center";
-//             dialog.style.backgroundColor = "gray";
-//             menuWindow.document.body.appendChild(dialog);
-//             const message = menuWindow.document.createElement("p");
-//             const xpath_text_message = menuWindow.document.createElement("p");
-//             xpath_text_message.textContent = "XPATHS: " + highlightedXpaths.map(xpath_ => xpath_ + '\n\n');
-//             message.textContent = "Classes: t, tn, n, st, sn, sst, ... , ssssn. Press SPACE when done; any other key to reset";
-//             message.style.fontSize = "12px";
-//             xpath_text_message.style.fontSize = "12px";
-//             dialog.appendChild(message);
-//             dialog.appendChild(xpath_text_message);
-
-//             let sequence = ''; // sequence of user input
-//             const allowedKeys = new Set(['t', 'n', 's'])
-//             const labelTypes = new Set(['t', 'tn', 'n', 'st', 'sn', 'sst', 'ssn', 'ssst', 'sssn', 'ssssn', 'sssst'])
-
-//             function handleKeyDown(event) {
-//                 // Intermediate input: if user input character is t or n or s, add to the sequence and consider the current sequence legit
-//                 if (allowedKeys.has(event.key)) {
-//                   sequence += event.key;
-//                 } 
-//                 // Final input: if user input space and sequence is legit
-//                 else if (event.code === 'Space' && sequence.length > 0 && labelTypes.has(sequence)) {
-//                     // Pass the information to the main window for highlighting
-//                     // If highlighted text spans over multiple elements
-//                     if (highlightedXpaths.length > 1) {
-//                         let flag = 0;
-//                         let flag_bef = 0;
-//                         let flag_aft = 0;
-//                         let xpathIndex;
-//                         // Iterate through all elements that the highlighted text spans
-//                         for (let i = 0; i < highlightedSegmentedText.length; i++) {
-//                             let taggedSeq;
-//                             if (i - flag_bef === 0) {
-//                             taggedSeq = 's_' + sequence; // first word of the expression
-//                             } else if (i === highlightedSegmentedText.length - 1) {
-//                             taggedSeq = 'e_' + sequence; // last word of the expression
-//                             } else {
-//                             taggedSeq = 'i_' + sequence;
-//                             }   
-//                             // Find the text intersection between highlightedSegmentedText[i] and highlightedText
-//                             // WHY NECESSARY?
-//                             const commonPart = [...highlightedSegmentedText[i]].filter(char => [...highlightedText].includes(char)).join('');
-//                             console.log('commonPart when spans over multiple elements:', commonPart);
-//                             // If there are common characters between highlightedSegmentedText[i] and highlightedText
-//                             if (commonPart != '') {
-//                                 flag = 1
-//                                 // highlightElementSelected(xpath, highlightedText, sequence)
-//                                 // Used sequence for colorMap color extraction
-//                                 // xpath is updated with an appended <span>
-//                                 highlightElementSelected(highlightedXpaths[i], commonPart, sequence);
-//                                 // Remove structural xpath resulting from nested webpage
-//                                 // xpath.substring(0, 11) => '/html/body/'
-//                                 imp_part_with_span = highlightedXpaths[i].substring(0, 11) + highlightedXpaths[i].substring(34);
-//                                 let imp_part;
-//                                 // WHY not check imp_part_with_span.lastIndexOf('/span[')???
-//                                 // ALERT: Rely on the condition that text is successfully highlighted and <span> was appended????
-//                                 if (imp_part_with_span.indexOf('/span[') != -1) {
-//                                     imp_part = imp_part_with_span.substring(0, imp_part_with_span.lastIndexOf('/span['));
-//                                 } else {
-//                                     imp_part = imp_part_with_span;
-//                                 }
-//                                 // WHERE is the xpaths called??? List of xpaths to what? Straight from csv?
-//                                 xpathIndex = xpaths.indexOf(imp_part);
-//                                 if (xpathIndex != -1) {
-//                                     if (tagged_sequence[xpathIndex] !== 'o') {
-//                                         // Counter corner cases: part of the text of the xpath is tagged non-o
-//                                         while(tagged_sequence[xpathIndex] !== 'o') {
-//                                             const nextIndex = findNextOccurrence(imp_part, xpathIndex);
-//                                             if (nextIndex !== -1) {
-//                                                 // Next occurrence found
-//                                                 console.log("Next occurrence index:", nextIndex);
-//                                                 xpathIndex = nextIndex; // Update xpathIndex for the next iteration
-//                                             } else {
-//                                                 console.log("No next occurrence found.");
-//                                                 break; // Exit the loop if no next occurrence is found
-//                                             }
-
-//                                         }
-//                                     }
-//                                     sTexts[xpathIndex] = highlightedSegmentedText[i];
-//                                     tagged_sequence[xpathIndex] = taggedSeq;
-//                                     highlighted_xpaths[xpathIndex] = imp_part;
-//                                 } 
-//                                 // WHAT if the highlighted text does not have a specific xpath in the csv or in `xpaths`???
-//                             } else {
-//                                 // flag_aft could be dropped since never aggregated??? If entered this else, flag has to be 0.
-//                                 if (flag == 0) flag_bef += 1;
-//                                 else flag_aft += 1;
-//                             }
-//                         }
-//                     if (flag_aft > 0) {
-//                         console.log('!!!!!Entered if (flag_aft > 0)!!!!!')
-//                         console.log(tagged_sequence[xpathIndex][0]);
-//                         if (tagged_sequence[xpathIndex][0] !== 's') {
-//                             tagged_sequence[xpathIndex] = 'e_'+sequence;
-//                         }
-//                         console.log(tagged_sequence[xpathIndex][0]);
-//                     }
-//                         updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence);
-//                     } else {
-//                         highlightElementSelected(highlightedXpaths, highlightedText, sequence);
-//                         imp_part_with_span = highlightedXpaths[0].substring(0, 11) + highlightedXpaths[0].substring(34);
-//                         let imp_part;
-//                         if (imp_part_with_span.indexOf('/span[') != -1) {
-//                             imp_part = imp_part_with_span.substring(0, imp_part_with_span.lastIndexOf('/span['));
-//                         } else {
-//                             // when clicked for highlight removal
-//                             imp_part = imp_part_with_span;
-//                         }
-//                         const xpathIndex = xpaths.indexOf(imp_part);
-//                         if (xpathIndex != -1) {
-//                             sTexts[xpathIndex] = highlightedSegmentedText;
-//                             tagged_sequence[xpathIndex] = 's_' + sequence;
-//                             highlighted_xpaths[xpathIndex] = imp_part;
-//                         } 
-//                         updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence);
-//                     }
-//                     isMenuOpen = false;
-//                     menuWindow.close();
-//                 } 
-//                 // Void if input is improper
-//                 else {
-//                     sequence = '';
-//                 }
-//                 console.log(sequence);
-//                 const currSeq = menuWindow.document.createElement("p");
-//                 currSeq.textContent = `Curr sequence: ${sequence}`;
-//                 currSeq.style.fontSize = "12px";
-//                 dialog.appendChild(currSeq);
-//             }
-
-//             menuWindow.addEventListener('keydown', handleKeyDown);
-
-//             menuWindow.addEventListener('unload', function() {
-//                 menuWindow.removeEventListener('keydown', handleKeyDown);
-//                 isMenuOpen = false;
-//             });
-//         }
-//     }
-// });
-
 function downloadJson() {
   downloadObjectAsJson(sessionStorage, 'contract_saved');
 }
@@ -281,21 +115,6 @@ function downloadObjectAsJson(exportObj, exportName) {
   document.body.appendChild(downloadAnchorNode); // required for firefox
   downloadAnchorNode.click();
   downloadAnchorNode.remove();
-}
-
-// UNUSED Helper function to get xpath and textContent of highlighted string from getElementInfo()
-function getAllXPathsAndTexts() {
-  const sel = window.getSelection();
-  const range = document.createRange();
-  range.selectNodeContents(document.body);
-  sel.removeAllRanges();
-  sel.addRange(range);
-
-  const xpaths_text = getElementInfo(sel, range);
-  const highlightedXpaths = xpaths_text.xpaths;
-  const highlightedSegmentedText = xpaths_text.selectedTexts;
-  
-  return [highlightedSegmentedText, highlightedXpaths];
 }
 
 // Helper function to get xpath and textContent of highlighted string
@@ -340,7 +159,6 @@ function getElementInfo(sel, range) {
               nodeText.length
             );
             if (startIndex !== -1) {
-            // if (nodeText.indexOf(currSelectCopy) !== -1) {
               console.log('Entered startIndex !== -1 when current node is text node.');
               let selectedText = nodeText.substring(startIndex, endIndex);
               // remove selectedText from currSelectCopy
@@ -364,7 +182,7 @@ function getElementInfo(sel, range) {
             // consider only nodes with text
             if (node.textContent.trim().length > 0) {
               let nodeXPath = getXPath(node);
-              // let nodeText = node.textContent.trim();
+			  // let nodeText = node.textContent.trim();
               let nodeText = node.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
               let startIndex = Math.max(nodeText.indexOf(currSelectCopy), 0);
               let endIndex = Math.min(
@@ -372,7 +190,6 @@ function getElementInfo(sel, range) {
                 nodeText.length
               );
               if (startIndex !== -1) {
-              // if (nodeText.indexOf(currSelectCopy) !== -1) {
                 console.log('Entered startIndex !== -1 when current node is not textnode has 0 children.');
                 let selectedText = nodeText.substring(startIndex, endIndex);
                 currSelectCopy = currSelectCopy.replace(selectedText, "");
@@ -389,123 +206,6 @@ function getElementInfo(sel, range) {
   
     return { xpaths: nodeXPaths, selectedTexts: nodeTexts };
   }
-
-// function handleKeyDown(event) {
-//     // Intermediate input: if user input character is t or n or s, add to the sequence and consider the current sequence legit
-//     if (allowedKeys.has(event.key)) {
-//       	sequence += event.key;
-//     } 
-//     // Final input: if user input space and sequence is legit
-//     else if (event.code === 'Space' && sequence.length > 0 && labelTypes.has(sequence)) {
-//         // Pass the information to the main window for highlighting
-//         // If highlighted text spans over multiple nodes
-//         if (highlightedXpaths.length > 1) {
-//             let flag = 0;
-//             let flag_bef = 0;
-//             let flag_aft = 0;
-//             let xpathIndex;
-//             // Iterate through all elements that the highlighted text spans
-//             for (let i = 0; i < highlightedSegmentedText.length; i++) {
-//                 let taggedSeq;
-//                 if (i - flag_bef === 0) {
-//                 taggedSeq = 's_' + sequence; // first word of the expression
-//                 } else if (i === highlightedSegmentedText.length - 1) {
-//                 taggedSeq = 'e_' + sequence; // last word of the expression
-//                 } else {
-//                 taggedSeq = 'i_' + sequence;
-//                 }   
-//                 // Find the text intersection between highlightedSegmentedText[i] and highlightedText
-//                 // WHY NECESSARY?
-//                 const commonPart = [...highlightedSegmentedText[i]].filter(char => [...highlightedText].includes(char)).join('');
-//                 console.log('commonPart when spans over multiple elements:', commonPart);
-//                 // If there are common characters between highlightedSegmentedText[i] and highlightedText
-//                 if (commonPart != '') {
-//                     flag = 1
-//                     // highlightElementSelected(xpath, highlightedText, sequence)
-//                     // Used sequence for colorMap color extraction
-//                     // xpath is updated with an appended <span>
-//                     highlightElementSelected(highlightedXpaths[i], commonPart, sequence);
-//                     // Remove structural xpath resulting from nested webpage
-//                     // xpath.substring(0, 11) => '/html/body/'
-//                     imp_part_with_span = highlightedXpaths[i].substring(0, 11) + highlightedXpaths[i].substring(34);
-//                     let imp_part;
-//                     // WHY not check imp_part_with_span.lastIndexOf('/span[')???
-//                     // ALERT: Rely on the condition that text is successfully highlighted and <span> was appended????
-//                     if (imp_part_with_span.indexOf('/span[') != -1) {
-//                         imp_part = imp_part_with_span.substring(0, imp_part_with_span.lastIndexOf('/span['));
-//                     } else {
-//                         imp_part = imp_part_with_span;
-//                     }
-//                     // WHERE is the xpaths called??? List of xpaths to what? Straight from csv?
-//                     xpathIndex = xpaths.indexOf(imp_part);
-//                     if (xpathIndex != -1) {
-//                         if (tagged_sequence[xpathIndex] !== 'o') {
-//                             // Counter corner cases: part of the text of the xpath is tagged non-o
-//                             while(tagged_sequence[xpathIndex] !== 'o') {
-//                                 const nextIndex = findNextOccurrence(imp_part, xpathIndex);
-//                                 if (nextIndex !== -1) {
-//                                     // Next occurrence found
-//                                     console.log("Next occurrence index:", nextIndex);
-//                                     xpathIndex = nextIndex; // Update xpathIndex for the next iteration
-//                                 } else {
-//                                     console.log("No next occurrence found.");
-//                                     break; // Exit the loop if no next occurrence is found
-//                                 }
-
-//                             }
-//                         }
-//                         sTexts[xpathIndex] = highlightedSegmentedText[i];
-//                         tagged_sequence[xpathIndex] = taggedSeq;
-//                         highlighted_xpaths[xpathIndex] = imp_part;
-//                     } 
-//                     // WHAT if the highlighted text does not have a specific xpath in the csv or in `xpaths`???
-//                 } else {
-//                     // flag_aft could be dropped since never aggregated??? If entered this else, flag has to be 0.
-//                     if (flag == 0) flag_bef += 1;
-//                     else flag_aft += 1;
-//                 }
-//             }
-//         if (flag_aft > 0) {
-//             console.log('!!!!!Entered if (flag_aft > 0)!!!!!')
-//             console.log(tagged_sequence[xpathIndex][0]);
-//             if (tagged_sequence[xpathIndex][0] !== 's') {
-//                 tagged_sequence[xpathIndex] = 'e_'+sequence;
-//             }
-//             console.log(tagged_sequence[xpathIndex][0]);
-//         }
-//             updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence);
-//         } else {
-// 			// User selected section contains only 1 node
-//             highlightElementSelected(highlightedXpaths, highlightedText, sequence);
-//             imp_part_with_span = highlightedXpaths[0].substring(0, 11) + highlightedXpaths[0].substring(34);
-//             let imp_part;
-//             if (imp_part_with_span.indexOf('/span[') != -1) {
-//                 imp_part = imp_part_with_span.substring(0, imp_part_with_span.lastIndexOf('/span['));
-//             } else {
-//                 // when clicked for highlight removal
-//                 imp_part = imp_part_with_span;
-//             }
-//             const xpathIndex = xpaths.indexOf(imp_part);
-//             if (xpathIndex != -1) {
-//                 sTexts[xpathIndex] = highlightedSegmentedText;
-//                 tagged_sequence[xpathIndex] = 's_' + sequence;
-//                 highlighted_xpaths[xpathIndex] = imp_part;
-//             } 
-//             updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence);
-//         }
-//         isMenuOpen = false;
-//         menuWindow.close();
-//     } 
-//     // Void if input is improper
-//     else {
-//         sequence = '';
-//     }
-//     console.log(sequence);
-//     const currSeq = menuWindow.document.createElement("p");
-//     currSeq.textContent = `Curr sequence: ${sequence}`;
-//     currSeq.style.fontSize = "12px";
-//     dialog.appendChild(currSeq);
-//   }
 
 const colorMap = getColorMap();
 function createColorOption(node, color, sequence) {
@@ -572,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function() {
 			isOptionClicked = true;
 		});
 	}
-	contract.addEventListener("mouseup", function(event) {
+	contract.addEventListener("mouseup", function() {
 
 		let highlightedText = window.getSelection().toString().trim();
 		let selectionRange = window.getSelection().getRangeAt(0);
@@ -601,21 +301,15 @@ document.addEventListener("DOMContentLoaded", function() {
 			let rangeY = range.getBoundingClientRect().bottom;
 			let rangeX = range.getBoundingClientRect().left;
 
-			// colorPopup.style.top = document.documentElement.scrollTop + rangeY +'px';
-            // colorPopup.style.left = document.documentElement.scrollLeft + rangeX + 'px';
-			// colorPopup.style.top = window.scrollY + rangeY +'px';
-            // colorPopup.style.left = window.scrollX + rangeX + 'px';
 			colorPopup.style.top = rangeY +'px';
             colorPopup.style.left = rangeX + 'px';
 			colorPopups.push(colorPopup);
-			// colorPopup inserted at the start of the range (i.e. the first user selected character)
-			// range.startContainer.parentNode.appendChild(colorPopup);
 			
 			const popupContainer= document.createElement('div');
             popupContainer.className = 'popup-container';
+			// colorPopup inserted at the start of the range (i.e. the first user selected character)
 			// range.startContainer.parentNode.appendChild(popupContainer);
 			document.body.appendChild(popupContainer);
-            // contract.children[2].children[0].children[0].children[0].children[0].children[0].appendChild(popupContainer);
             popupContainer.appendChild(colorPopup);
 
             popupContainer.addEventListener('click', function(event) {
@@ -641,6 +335,7 @@ document.addEventListener("DOMContentLoaded", function() {
 		
 	});
 });
+
 function highlightAndUpdateStorage(sequence, selectionMap){
         // Pass the information to the main window for highlighting
         // If highlighted text spans over multiple nodes
