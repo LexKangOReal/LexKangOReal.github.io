@@ -56,11 +56,19 @@ window.highlightElement = function(xpath, text, highlightedText, sequence) {
 
     // Iterate over text nodes and apply highlighting to each occurrence
     while (textNode = walker.nextNode()) {
-        // const textContent = textNode.textContent;
-        const textContent = textNode.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
-        // if (textContent.trim().length > 0) {
+        let textContent = textNode.textContent;
+        let index = text.indexOf(highlightedText);
+        // const textContent = textNode.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
+        if (index === -1) {
+            const textContentTrim = node.textContent.trim().split(/[\t\n\s]+/).join(' ');
+            const indexTrim = textContentTrim.indexOf(highlightedText);
+            if (indexTrim !== -1){
+                textContent = textContentTrim;
+                index = indexTrim;
+            }
+            console.log('textContentTrim:', textContentTrim, 'highlightedText:', highlightedText, indexTrim);
+        }
         if (textContent.length > 0) {
-            const index = text.indexOf(highlightedText);
             const beforeText = text.substring(0, index);
             const afterText = text.substring(index + highlightedText.length);
             const parent = textNode.parentNode;
@@ -120,10 +128,19 @@ window.highlightElementSelected = function(xpath, highlightedText, sequence) {
     while (node = walker.nextNode()) {
         console.log('Entered highlightElementSelected with walker.nextNode()');
         console.log('Current node type:', node.nodeType);
-        // const textContent = node.textContent;
-        const textContent = node.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
-        const index = textContent.indexOf(highlightedText);
+        const parent = node.parentNode;
+        let textContent = node.textContent;
+        let index = textContent.indexOf(highlightedText);
         console.log('textContent:', textContent, 'highlightedText:', highlightedText, index);
+        if (index === -1) {
+            const textContentTrim = node.textContent.trim().split(/[\t\n\s]+/).join(' ');
+            const indexTrim = textContentTrim.indexOf(highlightedText);
+            if (indexTrim !== -1){
+                textContent = textContentTrim;
+                index = indexTrim;
+            }
+            console.log('textContentTrim:', textContentTrim, 'highlightedText:', highlightedText, indexTrim);
+        }
         if (index !== -1) {
             const beforeText = textContent.substring(0, index);
             const afterText = textContent.substring(index + highlightedText.length);
@@ -132,12 +149,18 @@ window.highlightElementSelected = function(xpath, highlightedText, sequence) {
             span.style.backgroundColor = highlightColor;
             span.textContent = highlightedText;
             span.style.cursor = "pointer";
-            const beforeNode = document.createTextNode(beforeText);
-            const afterNode = document.createTextNode(afterText);
-            node.parentNode.insertBefore(beforeNode, node);
-            node.parentNode.insertBefore(span, node);
-            node.parentNode.insertBefore(afterNode, node);
-            node.parentNode.removeChild(node);
+
+            if (beforeText.length > 0) {
+                const beforeNode = document.createTextNode(beforeText);
+                parent.insertBefore(beforeNode, node);
+            }
+            parent.insertBefore(span, node);
+            if (afterText.length > 0) {
+                const afterNode = document.createTextNode(afterText);
+                parent.insertBefore(afterNode, node);
+            }
+            parent.removeChild(node);
+
             const spanSeqText = createPopup(sequence, span);
             // Remove popup and highlight when clicked
             span.onclick = function() {
