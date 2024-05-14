@@ -11,6 +11,10 @@ let texts = []
 let highlighted_xpaths = []
 let sTexts = []
 let tagged_sequence = []
+let csvFileName = 'N/A';
+const csvNamePlacement = document.getElementById('csv-file-name');
+csvNamePlacement.innerText = csvFileName;
+let lastSelectedSeq = "sssn";
 updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence)
 console.log('First updateStorage:', xpaths.length, xpaths);
 // OPTION 1
@@ -27,6 +31,8 @@ htmlFileUploaderOpt1.addEventListener('change', async (event) => {
 // Listen to event - read a CSV file with Option 1 -> Colornize
 csvFileUploaderOpt1.addEventListener('change', async (event) => {
     const file = event.target.files[0];
+	csvFileName = file.name.split('.')[0];
+	csvNamePlacement.innerText = csvFileName;
     const csvText = await readCSV(file);
     if (csvText !== undefined) {
         console.log("Successfully read csv text");
@@ -37,9 +43,8 @@ csvFileUploaderOpt1.addEventListener('change', async (event) => {
 // Listen to event - select a contract to visualize with Option 2 -> Colornize
 contractSelectorOpt2.addEventListener('input', async () => {
     const selectedValue = contractSelectorOpt2.value;
-    // console.log('User selected:', selectedValue);
     if (checkContractString(selectedValue)) {
-        // console.log("True");
+		csvNamePlacement.innerText = selectedValue;
         const htmlText = await loadFile("contract/html/"+selectedValue+".html", "html");
         const csvText = await loadFile("contract/csv/"+selectedValue+".csv", "csv");
         if (htmlText !== undefined && csvText !== undefined) {
@@ -68,12 +73,14 @@ htmlFileSelectorOpt3.addEventListener('input', async() => {
 csvFileUploaderOpt3.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     const csvText = await readCSV(file);
+	csvFileName = file.name.split('.')[0];
+	csvNamePlacement.innerText = csvFileName;
     if (csvText !== undefined) {
         console.log("Successfully read csv text");
+		console.log("You are viewing: ", file.name);
         visualizeGroundTruth(csvText);
     }
 })
-
 
 // Visualize the ground truth with CSV text
 function visualizeGroundTruth(csvText) {
@@ -92,8 +99,11 @@ function checkContractString(str) {
 }
 
 
-let isMenuOpen = false;
-let selectedOption = null;
+const scrollUpBtn = document.getElementById('scroll-up-button');
+scrollUpBtn.addEventListener('click', function(){
+	document.body.scrollTop = 1000;
+	document.documentElement.scrollTop = 1000;
+})
 
 function findNextOccurrence(xpath, startIndex) {
   for (let i = startIndex + 1; i < xpaths.length; i++) {
@@ -123,7 +133,7 @@ function getElementInfo(sel, range) {
     const nodeXPaths = [];
     const nodeTexts = [];
     let currSelectCopy = sel.toString().trim();
-
+	console.log('traverse() currSelectCopy: "'+currSelectCopy+'"');
     // Start from the lowest level of node and traverse upwards to obtain the xpath
     function getXPath(node) {
       let xpath = "";
@@ -153,18 +163,23 @@ function getElementInfo(sel, range) {
             // let nodeText = node.textContent.trim();
             let nodeText = node.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
             let startIndex = Math.max(nodeText.indexOf(currSelectCopy), 0);
-            console.log(startIndex, nodeText.indexOf(currSelectCopy), nodeText, currSelectCopy);
+            // console.log(startIndex, nodeText.indexOf(currSelectCopy), nodeText, currSelectCopy);
+			// console.log('traverse():\n Start index: '+startIndex+'\nnodeText.indexOf(highlightedText): '+nodeText.indexOf(currSelectCopy)+'\nnodeText: '+nodeText+'\nhighlightedText: '+ currSelectCopy);
             let endIndex = Math.min(
               startIndex + currSelectCopy.length,
               nodeText.length
             );
             if (startIndex !== -1) {
-              console.log('Entered startIndex !== -1 when current node is text node.');
+				// Why needed to slice the text node?
+            //   console.log('Entered startIndex !== -1 when current node is text node.');
               let selectedText = nodeText.substring(startIndex, endIndex);
               // remove selectedText from currSelectCopy
               currSelectCopy = currSelectCopy.replace(selectedText, "");
-              nodeTexts.push(selectedText);
+			//   console.log('traverse() selectedText: "'+selectedText+'";\ncurrSelectCopy: "'+currSelectCopy+'"');
+            //   nodeTexts.push(selectedText);
+			  nodeTexts.push(nodeText);
               nodeXPaths.push(nodeXPath);
+			//   console.log('traverse(): Current node is just a text node;\nnodeTexts:',nodeTexts,'\nnodeXpaths:', nodeXPaths);
             }
           }
         } 
@@ -172,8 +187,10 @@ function getElementInfo(sel, range) {
         else {
           // if current node has at least 1 child node
           if (node.childNodes.length > 0) {
+			console.log('traverse(): \n\tEntered Recursive portion for multiple child nodes');
               // recursively traverse through all child nodes
               for (let i = 0; i < node.childNodes.length; i++) {
+				console.log('traverse(): \n\tRecursive portion Current child node:\n', node.childNodes[i]);
                 traverse(node.childNodes[i]);
               }
             }
@@ -190,11 +207,13 @@ function getElementInfo(sel, range) {
                 nodeText.length
               );
               if (startIndex !== -1) {
-                console.log('Entered startIndex !== -1 when current node is not textnode has 0 children.');
+                // console.log('Entered startIndex !== -1 when current node is not textnode has 0 children.');
                 let selectedText = nodeText.substring(startIndex, endIndex);
                 currSelectCopy = currSelectCopy.replace(selectedText, "");
-                nodeTexts.push(selectedText);
+                // nodeTexts.push(selectedText);
+				nodeTexts.push(nodeText)
                 nodeXPaths.push(nodeXPath);
+				// console.log('traverse(): Curr node has no child nodes;\nnodeTexts:',nodeTexts,'\nnodeXpaths:', nodeXPaths);
               }
             }
           }
@@ -244,6 +263,7 @@ function createColorPopup(colorPopups, selectionMap) {
 		option.addEventListener("click", function() {
 			let color = option.style.backgroundColor;
 			let sequence = [...colorMap].find(([k, v]) => v.toLowerCase() === color)[0];
+			lastSelectedSeq = sequence;
 			colorPopup.remove();
 			colorPopups.pop();
 			console.log("color + sequence:", color, sequence);
@@ -256,9 +276,13 @@ function createColorPopup(colorPopups, selectionMap) {
 	return colorPopup;
 };
 
-  
+let isTextSelected = false;
+let selectionMap;
+let colorPopup;
+let colorPopups;
+let popupContainer;
 document.addEventListener("DOMContentLoaded", function() {
-	const colorPopups = [];
+	colorPopups = [];
 	let contract = document.getElementById('html-preview');
 	let isOptionClicked = false;
 	let isClickedInsidePopupContainer = false;
@@ -275,6 +299,7 @@ document.addEventListener("DOMContentLoaded", function() {
 	contract.addEventListener("mouseup", function() {
 
 		let highlightedText = window.getSelection().toString().trim();
+		console.log('highlightedText:::::', highlightedText);
 		let selectionRange = window.getSelection().getRangeAt(0);
 		let text = selectionRange.startContainer.textContent;
 		let sel = window.getSelection();
@@ -283,6 +308,16 @@ document.addEventListener("DOMContentLoaded", function() {
 		let highlightedXpaths = xpaths_text.xpaths; // xpath of the highlighted text
 		let highlightedSegmentedText = xpaths_text.selectedTexts; // Array of strings; text contents of the highlighted text
 		console.log('highlightedSegmentedText -->', highlightedSegmentedText);
+		let highlightedTextStartIndices;
+		const xpathsCnt = highlightedXpaths.length;
+		if (xpathsCnt === 2) {
+			highlightedTextStartIndices = [range.startOffset, 0];
+		} else if (xpathsCnt > 2) {
+			highlightedTextStartIndices = [range.startOffset].concat(Array(xpathsCnt-1).fill(0));
+		} else {
+			highlightedTextStartIndices = [range.startOffset];
+		}
+		console.log('highlightedTextStartIndices:::::', highlightedTextStartIndices);
 		let selectionObj = {
 			'highlightedText':highlightedText,
 			'selectionRange':selectionRange,
@@ -291,13 +326,16 @@ document.addEventListener("DOMContentLoaded", function() {
 			'range':range,
 			'xpaths_text':xpaths_text,
 			'highlightedXpaths':highlightedXpaths,
-			'highlightedSegmentedText':highlightedSegmentedText
+			'highlightedSegmentedText':highlightedSegmentedText,
+			'highlightedTextStartIndices':highlightedTextStartIndices
 		};
-		let selectionMap = new Map(Object.entries(selectionObj));
+		selectionMap = new Map(Object.entries(selectionObj));
 
 		// If user highlighted text, create color popup for sequence input
 		if (highlightedText !== '') {
-			const colorPopup = createColorPopup(colorPopups, selectionMap);
+			console.log('ENTERED highlighted text');
+			isTextSelected = true;
+			colorPopup = createColorPopup(colorPopups, selectionMap);
 			let rangeY = range.getBoundingClientRect().bottom;
 			let rangeX = range.getBoundingClientRect().left;
 
@@ -305,7 +343,7 @@ document.addEventListener("DOMContentLoaded", function() {
             colorPopup.style.left = rangeX + 'px';
 			colorPopups.push(colorPopup);
 			
-			const popupContainer= document.createElement('div');
+			popupContainer= document.createElement('div');
             popupContainer.className = 'popup-container';
 			// colorPopup inserted at the start of the range (i.e. the first user selected character)
 			// range.startContainer.parentNode.appendChild(popupContainer);
@@ -318,42 +356,68 @@ document.addEventListener("DOMContentLoaded", function() {
                     isClickedOutsidePopup = true;
                 }
                 isClickedInsideContainerNOutsidePopup = isClickedInsidePopupContainer && isClickedOutsidePopup;
-
-                if (isOptionClicked) {
-                    colorPopup.remove();
+				if (isOptionClicked || isClickedInsideContainerNOutsidePopup) {
+					colorPopup.remove();
                     colorPopups.pop();
                     popupContainer.remove();
-                    console.log('COLOR CHOSEN: colorpop and list cleared & popupContainer cleared after color is chosen');
-                } else if (isClickedInsideContainerNOutsidePopup) {
-                    colorPopup.remove();
-                    colorPopups.pop();
-                    popupContainer.remove();
-                    console.log('INSIDE CONTRAINER CLICKED: colorpop and list cleared & popupContainer cleared');
-                }
+				}
             });
 		} 
 		
 	});
 });
-
+window.addEventListener('keydown', function(event) {
+	if (event.code === 'Space' && event.target == document.body && isTextSelected) {
+		event.preventDefault();
+		highlightAndUpdateStorage(lastSelectedSeq, selectionMap);
+		colorPopup.remove();
+		colorPopups.pop();
+		popupContainer.remove();
+		isTextSelected = false;
+	}
+});
+// NEEDS checking: when highlightedText is longer than nodeTextContent
+function findCommonPart(highlightedText, nodeTextContent) {
+	let idx = nodeTextContent.indexOf(highlightedText);
+	let text = highlightedText;
+	if (idx > -1) {
+		return [idx, highlightedText];
+	}
+	while (highlightedText.length > 0) {
+		highlightedText = highlightedText.slice(0,-1);
+		idx = nodeTextContent.indexOf(highlightedText);
+		if ((idx > -1) && (idx + highlightedText.length === nodeTextContent.length)) {
+			//   console.log('1st:', highlightedText, idx)
+			return [idx, highlightedText];
+		}
+	}
+	highlightedText = text;
+	while (highlightedText.length > 0) {
+		highlightedText = highlightedText.slice(1);
+		idx = nodeTextContent.indexOf(highlightedText);
+		// console.log('2nd:', highlightedText, idx);
+		if (idx === 0) {
+			return [idx, highlightedText];
+		}
+	}
+	return -1;
+}
 function highlightAndUpdateStorage(sequence, selectionMap){
-        // Pass the information to the main window for highlighting
-        // If highlighted text spans over multiple nodes
-		
+	// Pass the information to the main window for highlighting
+	// If highlighted text spans over multiple nodes	
 	let highlightedText = selectionMap.get('highlightedText');
-	let selectionRange = selectionMap.get('selectionRange');
-	let text = selectionMap.get('text');
-	let sel = selectionMap.get('sel');
-	let range = selectionMap.get('range');
-	let xpaths_text = selectionMap.get('xpaths_text');
 	let highlightedXpaths = selectionMap.get('highlightedXpaths');
 	let highlightedSegmentedText = selectionMap.get('highlightedSegmentedText');
+	let highlightedTextStartIndices = selectionMap.get('highlightedTextStartIndices');
+	console.log('highlightedXpaths::::::::::',highlightedXpaths);
 
 	if (highlightedXpaths.length > 1) {
 		let flag = 0;
 		let flag_bef = 0;
 		let flag_aft = 0;
 		let xpathIndex;
+		let idx;
+		let commonPart;
 		// Iterate through all elements that the highlighted text spans
 		for (let i = 0; i < highlightedSegmentedText.length; i++) {
 			let taggedSeq;
@@ -365,16 +429,24 @@ function highlightAndUpdateStorage(sequence, selectionMap){
 			taggedSeq = 'i_' + sequence;
 			}   
 			// Find the text intersection between highlightedSegmentedText[i] and highlightedText
-			// WHY NECESSARY?
-			const commonPart = [...highlightedSegmentedText[i]].filter(char => [...highlightedText].includes(char)).join('');
-			console.log('commonPart when spans over multiple elements:', commonPart);
+			// Find the portion of selected text within the current text node
+			// const commonPart = [...highlightedSegmentedText[i]].filter(char => [...highlightedText].includes(char)).join('');
+			// idx = findCommonPart(highlightedText, highlightedSegmentedText[i])[0];
+			// commonPart = findCommonPart(highlightedText, highlightedSegmentedText[i])[1];
+			[idx, commonPart] = findCommonPart(highlightedText, highlightedSegmentedText[i])
+			//// BETTER FIND COMMON PART RATHER THAN INDEX
+			// console.log('commonPart when spans over multiple elements:', commonPart, highlightedTextStartIdx);
 			// If there are common characters between highlightedSegmentedText[i] and highlightedText
-			if (commonPart != '') {
+			console.log('highlightedSegmentedText[i]:::: "'+highlightedSegmentedText[i]+'";\nhighlightedText::: "'+highlightedText+ '";\nCOMMON PART (MULTI-xpaths): "'+commonPart+'"');
+			// if (commonPart != '') {
+			if (idx > -1) {
+				console.log('MATCHED MULTIPLE XPATHS NO.[', i, ']: highlightedText = ', highlightedText, '; \nhighlightedSegmentedText[i] = ', highlightedSegmentedText[i], '; \nidx:', idx);
 				flag = 1
 				// highlightElementSelected(xpath, highlightedText, sequence)
 				// Used sequence for colorMap color extraction
 				// xpath is updated with an appended <span>
-				highlightElementSelected(highlightedXpaths[i], commonPart, sequence);
+				console.log(highlightedTextStartIndices[i])
+				highlightElementSelected(highlightedXpaths[i], commonPart, sequence, highlightedTextStartIndices[i]);
 				// Remove structural xpath resulting from nested webpage
 				// xpath.substring(0, 11) => '/html/body/'
 				imp_part_with_span = highlightedXpaths[i].substring(0, 11) + highlightedXpaths[i].substring(34);
@@ -425,7 +497,8 @@ function highlightAndUpdateStorage(sequence, selectionMap){
 		updateStorage(xpaths, texts, highlighted_xpaths, sTexts, tagged_sequence);
 	} else {
 		// User selected section contains only 1 node
-		highlightElementSelected(highlightedXpaths, highlightedText, sequence);
+		console.log(highlightedTextStartIndices[0]);
+		highlightElementSelected(highlightedXpaths, highlightedText, sequence, highlightedTextStartIndices[0]);
 		imp_part_with_span = highlightedXpaths[0].substring(0, 11) + highlightedXpaths[0].substring(34);
 		let imp_part;
 		if (imp_part_with_span.indexOf('/span[') != -1) {
