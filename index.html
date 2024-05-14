@@ -101,13 +101,31 @@
         <p id="visualization-status"></p>
       </div>
       <div class="document-display">
+        <!-- <div class = "space-down-color-selection-display">
+          <p>Select a highlight color when space pressed down: </p>
+          <div id = "space-down-color-selection-display"></div>
+        </div> -->
         <div class="prediction-category" id="category-div">
           <table>
+            <tr>
+              <td>
+                CSV Currently rendered:
+              </td>
+              <td style="background-color: #ffffff11;">
+                <p id = "csv-file-name"></p>
+              </td>
+            </tr>
+            <tr>
+              <td>Scroll to 'Download'</td>
+              <td style = "background-color:lightyellow; cursor:pointer;" id = "scroll-up-button"></td>
+              <!-- <th>
+                <button onclick="downloadJson()" class="download-button">Download Here</button>
+              </th> -->
+            </tr>
             <tr>
               <th>Prediction category (segment type)</th>
               <th>Color</th>
             </tr>
-            
             <tr>
               <td>t (title)</td>
               <td style="background-color: #FF8C00;">DarkOrange</td>
