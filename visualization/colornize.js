@@ -64,7 +64,7 @@ window.highlightElement = function(xpath, text, highlightedText, sequence) {
         //     console.log('textNode', textNode);
         // }
         if (index === -1) {
-            const textContentTrim = node.textContent.trim().split(/[\t\n\s]+/).join(' ');
+            const textContentTrim = textContent.split(/[\t\n\s]+/).join(' ');
             const indexTrim = textContentTrim.indexOf(highlightedText);
             if (indexTrim !== -1){
                 textContent = textContentTrim;
