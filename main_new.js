@@ -509,7 +509,8 @@ function highlightAndUpdateStorage(sequence, selectionMap){
 		}
 		const xpathIndex = xpaths.indexOf(imp_part);
 		if (xpathIndex != -1) {
-			sTexts[xpathIndex] = highlightedSegmentedText;
+			// sTexts[xpathIndex] = highlightedSegmentedText;
+			sTexts[xpathIndex] = highlightedText;
 			tagged_sequence[xpathIndex] = 's_' + sequence;
 			highlighted_xpaths[xpathIndex] = imp_part;
 		} 
