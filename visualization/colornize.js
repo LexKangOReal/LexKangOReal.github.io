@@ -26,7 +26,7 @@ function colorize(xpathMap) {
       paragraph.style.color = "red";
     }
 };
-
+// text: column from csv
 window.highlightElement = function(xpath, text, highlightedText, sequence) {
     // Retrieve highlight color based on sequence
     const colorMap = getColorMap();
@@ -35,7 +35,7 @@ window.highlightElement = function(xpath, text, highlightedText, sequence) {
     // Find the result element in the main window
     let result = document.evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
 
-    // Create a tree walker
+    // Create a tree walker as there will be multiple text nodes sharing the same xpath
     const walker = document.createTreeWalker(
         result, // Root node
         NodeFilter.SHOW_TEXT, // Show text nodes
@@ -56,11 +56,15 @@ window.highlightElement = function(xpath, text, highlightedText, sequence) {
 
     // Iterate over text nodes and apply highlighting to each occurrence
     while (textNode = walker.nextNode()) {
-        let textContent = textNode.textContent;
+        let textContent = textNode.textContent.trim();
         let index = text.indexOf(highlightedText);
         // const textContent = textNode.textContent.trim().split(/[\s,\t,\n]+/).join(' ');
+        // if (text != textContent) {
+        //     console.log('textContent Mis-matched:','\nxpath:', xpath, '\ntext:', text, '\ntextContent:', textContent, '\nhighlightedText:', highlightedText, '\nindex:', index);
+        //     console.log('textNode', textNode);
+        // }
         if (index === -1) {
-            const textContentTrim = textNode.textContent.trim().split(/[\t\n\s]+/).join(' ');
+            const textContentTrim = node.textContent.trim().split(/[\t\n\s]+/).join(' ');
             const indexTrim = textContentTrim.indexOf(highlightedText);
             if (indexTrim !== -1){
                 textContent = textContentTrim;
@@ -96,7 +100,8 @@ window.highlightElement = function(xpath, text, highlightedText, sequence) {
         }
 };
 
-window.highlightElementSelected = function(xpath, highlightedText, sequence) {
+window.highlightElementSelected = function(xpath, highlightedText, sequence, highlightedTextStartIdx) {
+    console.log('XPATH: '+xpath);
     // Retrieve highlight color based on sequence
     const colorMap = getColorMap();
     const highlightColor = colorMap.get(sequence);
@@ -125,13 +130,13 @@ window.highlightElementSelected = function(xpath, highlightedText, sequence) {
 
     // Iterate over text nodes and apply highlighting to each occurrence
     let node;
+    // Node should be textNode; restricted by the treeWalker
     while (node = walker.nextNode()) {
-        console.log('Entered highlightElementSelected with walker.nextNode()');
-        console.log('Current node type:', node.nodeType);
+        console.log('Entered highlightElementSelected with walker.nextNode():\nnode:', node);
         const parent = node.parentNode;
         let textContent = node.textContent;
         let index = textContent.indexOf(highlightedText);
-        console.log('textContent:', textContent, 'highlightedText:', highlightedText, index);
+        console.log('textContent:', textContent, '\nhighlightedText:', highlightedText, index);
         if (index === -1) {
             const textContentTrim = node.textContent.trim().split(/[\t\n\s]+/).join(' ');
             const indexTrim = textContentTrim.indexOf(highlightedText);
@@ -139,11 +144,18 @@ window.highlightElementSelected = function(xpath, highlightedText, sequence) {
                 textContent = textContentTrim;
                 index = indexTrim;
             }
-            console.log('textContentTrim:', textContentTrim, 'highlightedText:', highlightedText, indexTrim);
+            console.log('textContentTrim: "'+textContentTrim+'";\nhighlightedText:"'+highlightedText+'";\nIndexTrim:',indexTrim);
         }
         if (index !== -1) {
             const beforeText = textContent.substring(0, index);
             const afterText = textContent.substring(index + highlightedText.length);
+
+            // ADDED
+            // const beforeText = textContent.substring(0, highlightedTextStartIdx);
+            // const afterText = textContent.substring(highlightedTextStartIdx + highlightedText.length);
+            // console.log('NEWLY ADDED highlightedTextStartIdx:::::',highlightedTextStartIdx);
+            // console.log('Before text: "'+beforeText+'"; \nAfter text: "'+afterText+'"');
+            // ADDED ENDED
             const span = document.createElement('span');
             span.className = "highlighted";
             span.style.backgroundColor = highlightColor;
@@ -167,6 +179,8 @@ window.highlightElementSelected = function(xpath, highlightedText, sequence) {
                 remove_popup(spanSeqText);
                 remove_highlight(span);
             };
+            // NEWLY ADDED
+            break;
         }
     }
 };
