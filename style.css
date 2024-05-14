@@ -181,10 +181,11 @@
   display: absolute;
   width: 100vw;
 }
+
 .html-display {
   display: absolute;
   width: 75%;
-  margin: auto;
+  margin: 2em auto 7em auto;
   left: 0;
   font-family: 'Times New Roman';
 }
