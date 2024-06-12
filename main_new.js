@@ -98,7 +98,14 @@ function checkContractString(str) {
     return regex.test(str);
 }
 
+// Disable space scrolling while user on current window
+window.addEventListener('keydown', function(e) {
+  if(e.keyCode == 32 && e.target == document.body) {
+    e.preventDefault();
+  }
+});
 
+// Scroll up button: clicked will take user to 'Download' button
 const scrollUpBtn = document.getElementById('scroll-up-button');
 scrollUpBtn.addEventListener('click', function(){
 	document.body.scrollTop = 1000;
